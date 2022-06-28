@@ -1,3 +1,6 @@
+import json
+import os
+import signal
 import time
 from selenium.common.exceptions import ElementNotInteractableException, NoSuchElementException, StaleElementReferenceException, ElementClickInterceptedException
 from selenium.webdriver import DesiredCapabilities, Firefox, FirefoxProfile
@@ -11,6 +14,12 @@ continue_locator = (By.XPATH, "//span[text() = 'Continue']")
 check_locator = (By.XPATH, "//span[text() = 'Check']")
 player_practice_again_locator = (By.CSS_SELECTOR, "button[data-test='player-practice-again']")
 
+translations_filename = "translations.json"
+start = time.time()
+translations = json.load(open(translations_filename, "r"))
+end = time.time()
+print("Loaded {} translations from disk in {} seconds.".format(len(translations), end - start))
+
 # setup
 profile_path = '/Users/alaileon/Library/Application Support/Firefox/Profiles/ld5n6nou.default-esr'
 profile = FirefoxProfile(profile_path)
@@ -19,9 +28,19 @@ profile.set_preference('useAutomationExtension', False)
 profile.set_preference('detach', True)
 profile.update_preferences()
 desired = DesiredCapabilities.FIREFOX
-driver = Firefox(firefox_profile=profile, desired_capabilities=desired)
-translations = {}
+driver = Firefox(firefox_profile=profile, desired_capabilities=desired, service_log_path=os.devnull)
 
+# rate of challenge solving
+main_throttle = 0.5
+
+def keyboardInterruptHandler(sig, frame):
+	start = time.time()
+	json.dump(translations, open(translations_filename, "w"))
+	end = time.time()
+	print("Wrote {} translations to disk in {} seconds.".format(len(translations), end - start))
+	exit(0)
+
+signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
 def input_translate():
 	global loop_count
@@ -234,7 +253,7 @@ while True:
 			driver.implicitly_wait(10)
 			print("looking for any player-* button")
 			driver.find_element(*player_locator)
-			time.sleep(0.5)
+			time.sleep(main_throttle)
 			driver.implicitly_wait(0)
 			try:
 				print("looking for player-practice-again")
