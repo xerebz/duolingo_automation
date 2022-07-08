@@ -29,9 +29,10 @@ profile.set_preference('detach', True)
 profile.update_preferences()
 desired = DesiredCapabilities.FIREFOX
 driver = Firefox(firefox_profile=profile, desired_capabilities=desired, service_log_path=os.devnull)
+driver.set_page_load_timeout(30)
 
 # rate of challenge solving
-main_throttle = 0.5
+main_throttle = 6
 
 def keyboardInterruptHandler(sig, frame):
 	start = time.time()
@@ -327,4 +328,7 @@ while True:
 	except Exception as e:
 		# ignore literally everything else, get back on that rat wheel
 		print(e)
-		driver.get("https://www.duolingo.com/practice")
+		try:
+			driver.get("https://www.duolingo.com/practice")
+		except Exception as e:
+			print(e)
